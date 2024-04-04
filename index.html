@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mind Control Adventures</title>
+	<link rel="stylesheet" type="text/css" href="UI/themes/theme0/game.css">
+	<script src="Javascripts/compiled.js"></script>
+	<script src="Javascripts/config.js"></script>
+	<script src="Mods/details.js"></script>
+	<script src="Mods/details1.js"></script>
+	<script src="Mods/details2.js"></script>
+	<script src="Mods/details3.js"></script>
+	<script src="Mods/details4.js"></script>
+	<script src="Mods/details5.js"></script>
+	<script src="Mods/details6.js"></script>
+	<script src="Mods/details7.js"></script>
+	<script src="Mods/details8.js"></script>
+	<script src="Mods/details9.js"></script>
+		
+	<style>
+		@media only screen and (orientation:portrait) {
+		 .contentdivleft { float:left; }
+		 .contentdivright { float:left; }
+		 .startdivleft { float:left;vertical-align:top;line-height:1.7em }
+		 .startdivright { float:left;vertical-align:top;margin-top:1em }
+		}
+		@media screen and (orientation:landscape) {
+		 .contentdivleft { float:left;max-width:25%;padding:5px; }
+		 .contentdivright { float:left;max-width:70%;padding:15px; }
+		 .startdivleft { float:left;width:70%;max-width:75%;padding:5px;vertical-align:top; }
+		 .startdivright { float:right;max-width:22%;padding-right:10px;vertical-align:top; }
+		}
+		.mrMultipleText { width:90%; float:left; }	
+		.spoilerbutton {display:block;margin:5px 0;}
+	   .spoiler > div {-webkit-transition: all 0.2s ease;-moz-transition: margin 0.2s ease;-o-transition: all 0.2s ease;transition: margin 0.2s ease;}
+		.spoilerbutton[value="Show Old History"] + .spoiler > div {display:none}
+		.spoilerbutton[value="Hide Old History"] + .spoiler {display:block;padding:0px;} 
+		.spoilerbutton[value="Show"] + .spoiler > div {display:none;}
+		.spoilerbutton[value="Hide"] + .spoiler {display:block;padding:0px;}
+		.info { width:15%;vertical-align:top;font-weight:bold; }
+
+		/* White theme
+		.spoiler {overflow:hidden;background: #f5f5f5;}
+		.spoiler {overflow:hidden;background: #f5f5f5;}
+		body {background-image:url(UI/backgrd1.jpg);background-repeat:no-repeat;background-size:auto 100vh;font-size:large;background-color:white;color:black;}
+		*/
+		/* Dark Grey theme */
+		.spoiler {overflow:hidden;background: #242424;}
+		.spoiler {overflow:hidden;background: #242424;}
+		a:link {color:#f0f0f0;text-decoration:underline; }
+		a:active {color:#f0f0f0;text-decoration:underline; }
+		a:visited {color:#f0f0f0;text-decoration:underline; }
+		a:hover {color:#f0f0f0;text-decoration:underline; }
+		body {background-image:url(UI/backgrd1grey.jpg);background-repeat:no-repeat;background-size:auto 100vh;font-size:large;background-color:#121212;color:#f0f0f0;}
+
+	</style>
+</head>
+
+<body>
+<div style='text-align:left;width:100%;vertical-align:top'>
+
+<script>
+	var arPeople = [];
+	function DefaultName() {
+		if (sGender == "man") document.getElementById("charName").value = "Bob";
+		else document.getElementById("charName").value = "Barbara";
+	}
+	function ShowAvatarImage() {
+		var fldr = "Player/" + perYou.folder;
+		var ofldr = fldr;
+		if (gameState.sMod !== "") fldr = "Mods/" + gameState.sMod.split(",")[0] + "/Images/" + fldr;
+		else fldr = "Images/" + fldr;
+		document.getElementById("imageHolder").innerHTML = '<img src="' + fldr + '/face1.jpg" style="width:75%;float:right" onerror="this.src=\'Images/' + ofldr + '/face1.jpg\'" alt="Avatar">';
+	}
+	function SetAvatars(x) {
+		var av = document.getElementById("avatars");
+		av.options.length = 0;
+		if (x == 2) sGender = "futa";
+		else if (x == 1) sGender = "woman";
+		else sGender = "man";
+		var id = document.getElementById("idMale");
+		id.style.border = sGender == "man" ? "1px solid white" : "";
+		id = document.getElementById("idFemale");
+		id.style.border = sGender == "man" || sGender == "futa" ? "" : "1px solid white";
+		id = document.getElementById("idFuta");
+		id.style.border = sGender != "futa" ? "" : "1px solid white";
+		var lst;
+		if (x === 0) lst = perYou.sMaleFolderList.split(",");
+		else lst = perYou.sFemaleFolderList.split(",");
+		for (var i = 0; i < lst.length; i++) av.options[i] = new Option(lst[i], lst[i], i == 0, i == 0);
+		perYou.folder = lst[0];
+		ShowAvatarImage();
+	}
+	function SetScenarios() {
+		var sc = document.getElementById("scenario");
+		sc.options.length = 0;
+		var modlist = Object.getOwnPropertyNames(oModsDetails);
+		var itm;
+		sc.options[0] = new Option("Standard Game", "", true, true);
+		for (var i = 0, ie = modlist.length; i < ie; i++) {
+			itm = oModsDetails[modlist[i]];
+			sc.options[i + 1] = new Option(itm.name + ' Mod', itm.name, false, false);
+		}
+		gameState.sMod = "";
+	}
+
+	function ChangeUIForScenario(flags)
+	{
+		console.log("ChangeUIForScenario: " + flags);
+		if (flags === "reset") {
+			// Reset UI
+			document.getElementById("idFuta").style.display = "inline";
+			document.getElementById("idFemale").style.display = "inline";
+			document.getElementById("idMale").style.display = "inline";
+			document.getElementById("BritishSetting").style.display = "inline";
+			return;
+		}
+		var ar = flags.toLowerCase().split(",");
+		for (var i = 0; i < ar.length; i++) {
+			if (ar[i] === "pickmale") { SetAvatars(0); ChangeAvatar(); }
+			else if (ar[i] === "pickfemale") { SetAvatars(1); ChangeAvatar(); }
+			else if (ar[i] === "pickfuta") { SetAvatars(2); ChangeAvatar(); }
+			else if (ar[i] === "onlymale") { 
+				document.getElementById("idFuta").style.display = "none";
+				document.getElementById("idFemale").style.display = "none";
+				SetAvatars(0);
+				ChangeAvatar();
+			} else if (ar[i] === "onlyfemale") { 
+				document.getElementById("idMale").style.display = "none";
+				document.getElementById("idFuta").style.display = "none";
+				SetAvatars(1);
+				ChangeAvatar();
+			} else if (ar[i] === "onlyfuta") { 
+				document.getElementById("idMale").style.display = "none";
+				document.getElementById("idFemale").style.display = "none";
+				SetAvatars(2);
+				ChangeAvatar();
+			} else if (ar[i] === "pickuk") document.getElementById("BritishSetting").checked = true;
+			else if (ar[i] === "pickus") document.getElementById("BritishSetting").checked = false;
+			else if (ar[i] === "onlyuk") {
+				document.getElementById("BritishSetting").checked = true;
+				document.getElementById("BritishSetting").style.display = "none";
+			} else if (ar[i] === "onlyus") {
+				document.getElementById("BritishSetting").checked = false;
+				document.getElementById("BritishSetting").style.display = "none";
+			}
+		}
+	}
+	function ChangeScenario()
+	{
+		var sc = document.getElementById("scenario").value;
+		var det = document.getElementById("scenariodetails");
+		var sel = document.getElementById("selectedscenarios");
+		det.innerHTML = "default game";
+		if (sc == "") {
+			ChangeUIForScenario("reset");
+			gameState.sMod = '';
+			sel.innerHTML = '';
+			ShowAvatarImage();
+			return;
+		}
+		var modlist = Object.getOwnPropertyNames(oModsDetails);
+		var itm;			
+		for (var i = 0, ie = modlist.length; i < ie; i++) {	
+			itm = oModsDetails[modlist[i]];
+			if (sc == itm.name) {
+				det.innerHTML = itm.description;
+				if (gameState.sMod === "") gameState.sMod = itm.uid;
+				else {
+					if (gameState.sMod.indexOf(itm.uid) != -1) gameState.sMod = gameState.sMod.split(itm.uid + ",").join("");
+					else gameState.sMod += "," + itm.uid;
+				}
+				ChangeUIForScenario(itm.flags);
+				sel.innerHTML = "<b>Selected: " + gameState.sMod + "</b>";
+				break;
+			}
+		}
+		ShowAvatarImage();
+	}
+
+	function saveChar() {
+		var Data = document.getElementsByName("FormChar")[0];
+		setExplicit(true);
+		if (Data.Explicit != undefined) setExplicit(Data.Explicit.checked === true);
+		if (Data.exall != undefined) {
+			if (Data.exother.checked) gameState.nExplicitRatio = parseInt(Data.exratio.value, 10);
+			else gameState.nExplicitRatio = Data.exall.checked ? 1.0 : 0.8;
+			if (gameState.nExplicitRatio > 1.0) gameState.nExplicitRatio = 1.0;
+			else if (gameState.nExplicitRatio <= 0) {
+				gameState.nExplicitRatio = 0;
+				setExplicit(false);
+			}
+		}
+		gameState.nInventoryMode = 2;
+		gameState.nUseIcons = 2;
+		sCurrency = "";
+		if (Data.BritishSetting != undefined) sCurrency = Data.BritishSetting.checked ? "\u00A3" : "$";
+		setRunes(true);
+		if (Data.RuneMatching != undefined) setRunes(Data.RuneMatching.checked === true);
+		setPuzzles(true);
+		if (Data.Puzzles != undefined) setPuzzles(!(Data.Puzzles.checked === true));
+		gameState.bAllPlaces = false;
+		if (Data.Explorer != undefined) gameState.bAllPlaces = Data.Explorer.checked === true;
+		if (Data.UnDo != undefined) gameState.bAllowUndo = Data.UnDo.checked === true;
+		if (Data.UIHints != undefined) gameState.bUIHints = Data.UIHints.checked === true;
+		perYou.folder = Data.avatars.value;
+		saveGlobalSettings();
+		
+		// Other initial settings for the game
+		var init = '';
+		if (Data.MaleMayor != undefined && Data.MaleMayor.checked === true) init += ';findPerson("Mayor").dress="Eddie";per.setFlag(8)';
+		if (Data.NoNonHumans != undefined && Data.NoNonHumans.checked === true) init += ';findPerson("Vampyre").other=-1';
+		if (Data.Lottery != undefined && Data.Lottery.checked === true) init += ';AddCash(500)';
+		if (Data.ManaBonus != undefined && Data.ManaBonus.checked === true) init += ';AddMana(100)';
+		if (Data.ManaGen != undefined && Data.ManaGen.checked === true) init += ';perYou.setFlag(65)';
+		if (Data.QuickWalk != undefined && Data.QuickWalk.checked === true) init += ';perYou.setFlag(66)';
+		if (Data.TaxiAlways != undefined && Data.TaxiAlways.checked === true) init += ';bTaxiAlways=true';
+		
+		// Start the game
+		DoRestart(Data.charName.value, Data.avatars.value, init);
+	}
+
+	function loadGame() {
+		gameState = new GameStatus();
+		setExplicit(true);
+		sCurrency = "$";
+		setRunes(true);
+		setPuzzles(true);
+		sGender = "LoadGame";
+		DoRestart();
+	}
+	function showPopupWindowStart() {
+		gameState = new GameStatus();
+		openLocalDb();
+		initialiseYou();
+		setConfig();
+		sGender = "man";
+		setExplicit(true);
+		sCurrency = "$";
+		setRunes(true);
+		setPuzzles(true);
+		nRightBarState = 2;
+		gameState.nLeftBarState = 2;
+		gameState.nWidth = getWidth(document);
+		loadGlobalSettings(showPopupWindowStart2);
+	}
+	function showPopupWindowStart2()
+	{
+		document.getElementById("Explicit").checked = isExplicit();
+		document.getElementById("BritishSetting").checked = sCurrency != "$";
+		document.getElementById("Puzzles").checked = !isPuzzles();
+		document.getElementById("RuneMatching").checked = isRunes();
+		document.getElementById("Explorer").checked = gameState.bAllPlaces;
+		document.getElementById("UIHints").checked = gameState.bUIHints;
+		document.getElementById("Themes").value = nTheme;
+		SetAvatars(sGender == "futa" ? 2 : sGender == "man" ? 0 : 1);
+		SetScenarios(0);
+		DefaultName();
+		ChangeExplicit();
+		document.getElementById('lightstart').style.display='block';
+		document.getElementById('fadestart').style.display='block';
+	};
+	function closePopupWindowStart() {
+		document.getElementById('lightstart').style.display='none';
+		document.getElementById('fadestart').style.display='none';
+	}
+	function ChangeAvatar()
+	{
+		perYou.folder = document.getElementById("avatars").value;
+		ShowAvatarImage();
+	}
+	function ChangeTheme()
+	{
+		nTheme = parseInt(document.getElementById("Themes").value, 10);
+	}
+	function ChangeExplicit()
+	{
+		var exc = document.getElementById("Explicit").checked;
+		document.getElementById("exall").style.display = exc ? "inline" : "none";
+		document.getElementById("exsome").style.display = exc ? "inline" : "none";
+		document.getElementById("exalllab").style.display = exc ? "inline" : "none";
+		document.getElementById("exsomelab").style.display = exc ? "inline" : "none";		
+		document.getElementById("exother").style.display = exc ? "inline" : "none";
+		document.getElementById("exotherlab").style.display = exc ? "inline" : "none";			
+		document.getElementById("explicittype").style.height = exc ? (isScreenSmall() ? "9em" : "5em") : "1em";
+		document.getElementById("exratio").style.display = exc ? "inline" : "none";
+	}	
+	function ChangeRatio(val)
+	{
+		var inrat = document.getElementById("exratio");
+		if (inrat) inrat.value = val + "%";
+	}
+</script>
+
+<div id="starthelp" class="white_content" style="background-color:black;color:white;z-index:83;display:none">
+	<span class="zoom-icon" style="position:absolute;top:0px;right:0px"><img draggable="false" style="cursor:pointer" onclick="document.getElementById('starthelp').style.display='none';document.getElementById('lightstart').style.display='block'" src="UI/help.png" width="48" alt="Help" title="Help"></span>
+	<p style='margin-top:-6px;font-size:xx-large'><b>Help To Start A New Adventure</b></p>
+	<p style="margin-top:-20px">This screen allows you to select details for your character in the game and some details for the game in general</p>
+	<p><b>Your character</b></p>
+	<p>You can select here the name of your character, your gender as a male, female or futanari (fully functional hermaphrodite), and the avatar. The model you select for your avatar will affect some images used for your character in the game. The images are not used often except at the top left of the screen.</p>
+	<p><b>General Game Settings</b></p>
+	<p>These setting affect how the game plays out, and many can be changed during the course of the game. Open your phone and use the 'Apps' icon and here you can toggle on or off most of these settings unless otherwise noted.</p>
+	<p><b>Explicit Content:</b> Unless selected images in the game are limited to R rated images with nudity and non-explicit sex scenes. If selected the full hardcore images are also shown</p>
+	<p><b>Game is based in the UK:</b> The game is either set in the United Kingdoms or in the United States. Some different images and some characters use completely different models between the settings. Terms like currency, legal terminology and age of consent for drinking differs in these settings. All major elements of gameplay are otherwise unaffected. <b>Cannot be changed after the start of game.</b></p>
+	<p><b>Riddles:</b> At times in the game you will be asked to solve some riddles, passwords or similar. If you choose you do not like them then you will never be asked these, your character will automatically solve them.</p>
+	<p><b>Rune Matching:</b> When you learn spells a system to compare runic symbols/text will be used. Otherwise a search and type system will be used.</p>
+	<p><b>Know the town:</b> The default is the town will be explored in game play, and areas opened up as you need to visit them. If you know the town well then you will at the start know all public/non-secret locations in the town. Gameplay is otherwise unaffected. <b>Cannot be changed after the start of game.</b></p>
+	<p><b>Easier Mode:</b> If selected you will gain mana faster to power spells and you will have the ability to undo some dire actions that would end the game without loading an earlier save game. <b>Cannot be changed after the start of game.</b></p>
+	<p class="gblock optionblock" onClick="document.getElementById('starthelp').style.display='none';document.getElementById('lightstart').style.display='block'">finished with this help</p>
+</div>
+<div id="lightstart" class="white_content" style="background-color:black;color:white;width:91%;left:3%;line-height:1.2">
+	<span class="zoom-icon" style="position:absolute;top:0px;right:0px"><img draggable="false" style="cursor:pointer;" onclick="document.getElementById('starthelp').style.display='block';document.getElementById('lightstart').style.display='none'" src="UI/help.png" width="36" alt="Help" title="Help"></span>
+	<form method="GET" name="FormChar" action="index.html">
+		<img src="UI/logo.png" style="position:absolute;top:0px;left:5%;width:85%" alt="logo">
+		<p style='font-size:xx-large'><b>A New Adventure</b></p>
+		<p style="margin-top:-20px">What are the details for your character and the game setting? Note: the options marked (harder) increase the difficulty for a beginner player. The ones under <b>Easier</b> make things easier and quicker in the early game.</p>
+
+		<div class="startdivleft" style="margin-top:-10px">
+			<b>What is your name?</b><br>
+			<input type="text" id="charName" value="Bob" style="width:90%;margin-bottom:0.5em"><br>
+			<select style="margin-top:0em;font-size:1em" name="scenario" id="scenario" size="1" onchange="ChangeScenario()">
+			</select>
+			<label for="scenario" style="cursor:pointer" title="A scenario for the game"><span style="width:30%;float:left;font-weight:bold">Scenario</span></label><br>
+			<div style="text-align:center;width:100%;font-weight:normal;font-size:medium">
+			<span id="scenariodetails">default game</span><br>
+			<span id="selectedscenarios"></span><br>
+			</div>
+
+			<b>General Game Options</b><br>
+			<fieldset id="explicittype" style="padding-top:0.1em;padding-bottom:0.1em">
+				<legend><input style="clear:both;cursor:pointer;float:left" type="checkbox" name="sexstuff" id="Explicit" checked onchange="ChangeExplicit()"><label for="Explicit" style="cursor:pointer">Enable <b>explicit</b> (X Rated) images</label></legend>
+				<input type="radio" id="exall" name="exgr" value="all" onchange="ChangeRatio(100)"><label id="exalllab" for="exall">Show explicit images always if they are available</label><br>
+				<input type="radio" id="exsome" name="exgr" checked="true" value="some" onchange="ChangeRatio(80)"><label id="exsomelab" for="exsome">Mostly (80%), sometimes show non-explicit images</label><br>
+				<input type="radio" id="exother" name="exgr" value="other"><label id="exotherlab" for="exother">Other</label> <input type="text" id="exratio" value="80%" style="width:20%;margin-bottom:0.5em"><br>
+			</fieldset>
+			<p style="margin-top:-0.75em;margin-bottom:0">&nbsp;</p>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="britishsetting" id="BritishSetting"><label for="BritishSetting" style="cursor:pointer" title="If not the town is in the US"><span class="mrMultipleText">Game is in the <b>United Kingdoms</b></span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="runematching" id="RuneMatching" checked><label for="RuneMatching" style="cursor:pointer" title="Use a rune matching process to learn spells"><span class="mrMultipleText">Use <b>Rune Matching</b> to learn spells</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="explorer" id="Explorer"><label for="Explorer" style="cursor:pointer" title="You know all public places in town at the start of the game"><span class="mrMultipleText">You know the town well (harder)</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="malemayor" id="MaleMayor"><label for="MaleMayor" style="cursor:pointer" title="The town Mayor is male named Bertie"><span class="mrMultipleText">The town's Mayor is a man</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="nononhumans" id="NoNonHumans"><label for="NoNonHumans" style="cursor:pointer" title="There are no nonhuman beings like vampires, ghosts or monsters. But there are demons and Kurdorf..."><span class="mrMultipleText">There are no non-human beings (except demons and Kurndorf)</span></label><br>
+			<b>Easier game options</b><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="puzzles" id="Puzzles"><label for="Puzzles" style="cursor:pointer" title="You love puzzles and will instantly solve any in the game"><span class="mrMultipleText">You are an expert in riddles</span></label><br>	
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="undo" id="UnDo"><label for="UnDo" style="cursor:pointer" title="Things are a little easier, more mana and time for some things"><span class="mrMultipleText">Things are a little easier and you can undo some dire actions</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="momoney" id="Lottery"><label for="Lottery" style="cursor:pointer" title="You recently won a small lottery price and have an extra 500 in the local currency"><span class="mrMultipleText">You recently won a small lottery prize +500 in cash</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="momana" id="ManaBonus"><label for="ManaBonus" style="cursor:pointer" title="You have occult power +100 mana"><span class="mrMultipleText">Your studies into the occult somehow gave you +100 mana</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="witchborn" id="ManaGen"><label for="ManaGen" style="cursor:pointer" title="You have have some witch-blood and regenerate mana"><span class="mrMultipleText">You have a witch ancestor and regenerate mana every dawn</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="quickwalk" id="QuickWalk"><label for="QuickWalk" style="cursor:pointer" title="Once you have been somewhere you can quickly walk back there using your map"><span class="mrMultipleText">Once you have been somewhere you can quickly walk back there using your map</span></label><br>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="taxichance" id="TaxiAlways"><label for="TaxiAlways" style="cursor:pointer" title="You can always find a taxi"><span class="mrMultipleText">You can always find a taxi</span></label>
+			<input style="clear:both;cursor:pointer;float:left" type="checkbox" name="uihints" id="UIHints"><label for="UIHints" style="cursor:pointer" title="Hints can be shown for general controls and game play options"><span class="mrMultipleText">Some graphical hints can be shown for the game interface in the early game</span></label>
+			<br/>
+			<p style="margin-top:-0.75em;margin-bottom:0">&nbsp;</p>
+			<br/>
+			<select style="margin-top:0em;font-size:1em" name="Themes" id="Themes" size="1" onchange="ChangeTheme()">
+				<optgroup style="font-size:1.1em" label="General background theme">
+					<option value="0">White</option>
+					<option value="1">Black</option>
+					<option value="2" selected>Dark Grey</option>
+				</optgroup>
+			</select>
+			<label for="Themes" style="cursor:pointer" title="Theme for the game"><span style="width:50%; float:left;margin-top:0.2em">Theme for the game</span></label>
+		</div>
+		<div class="startdivright">
+			<b style="text-align:right">Are you a man or a woman?&nbsp;&nbsp;</b><br>
+			<img id="idFuta" src="UI/futa.png" style="cursor:pointer;float:right;margin-left:4px" width="30px" alt="Female" onclick="SetAvatars(2);DefaultName()" title="Futa">
+			<img id="idFemale" src="UI/female.png" style="cursor:pointer;float:right;margin-top:6px;margin-left:4px" width="35px" alt="Female" onclick="SetAvatars(1);DefaultName()" title="Female">
+			<img id="idMale" src="UI/male.png" style="cursor:pointer;float:right;margin-top:6px;margin-left:4px" width="35px" alt="Male" onclick="SetAvatars(0);DefaultName()" title="Male">
+			<br>Avatar: <select style="margin-top:0em;font-size:1em" name="avatars" id="avatars" size="1" onchange="ChangeAvatar()">
+			</select>
+			<div id="imageHolder">
+				<img src="UI/books/book1.png" style="width:60%;float:right" alt="Avatar">
+			</div>
+		</div>
+		<div style="float:left;width:100%;text-align:center">
+			<p style="margin-top:-0.75em;margin-bottom:0">&nbsp;</p>
+			<b>Done selecting?</b>
+			<p class="gblock optionblock" onClick="saveChar()">Start the Game</p>
+			<p class="gblock optionblock" onClick="closePopupWindowStart()"><i>forget it</i></p>
+		</div>
+	</form>
+</div>
+<div id="fadestart" class="black_overlay"></div>
+
+<div class="contentdivleft" style="border:5px solid orange">
+	<div style="width:100%">
+	<img src="UI/logoc.png" style="width:99%" alt="logo">
+	<p style="text-align:center;font-size:x-large;margin-top:-0.2em;margin-bottom:-.2em"><b>Your journey awaits</b></p>
+	<p style="text-align:center;font-size:medium"><b>
+	<img src="UI/books/book1.png" width="65%" style="max-width:300px" alt="The Book"></b></p>
+	<p style="text-align:center;font-size:medium">A mysterious book, and a journey of discovery, danger, and <i>control</i>.</p>
+	<p style="text-align:center;font-size:medium">
+		Contains<br>
+		(mc/md/ff/fd/mm/in/<br>bdsm/fff/mff/mmf)<br>
+	</p>
+	<div style="text-align: center">
+		<a draggable="false" href="javascript:showPopupWindowStart()"><img class="image-hover-highlight" draggable="false" src="UI/start.png" style="width:4em" title="Start Game" alt="Start Game"></a>
+		<a draggable="false" href="javascript:loadGame()"><img class="image-hover-highlight" draggable="false" src="UI/load.png" style="width:4em" title="Load A Saved Game" alt="Load Game"></a>
+	</div>
+	<hr style="color:orange;background-color:orange;border-color:orange">
+	<p style="text-align:center;font-size:medium">
+	<a href="Help/faq.htm">Frequently Asked Questions (FAQ)</a></p>
+		</div>
+</div>
+<div class="contentdivright">
+	<!-- <p style="text-align:center;color:#FF00FF;font-size:xx-large;margin-top:0.5em"><b>Mind Control Adventures</b></p> -->
+	<p style="text-align:center;color:#FF0000">
+		<b>Adults Only! Due to the adult nature (sex scenes, nudity, occasional coarse language and adult themes) you must be at least 18 years old in order to proceed.</b>
+		<br>
+		<b>I'm not 18 years old and made a mistake in coming here.<br><a href="http://www.disney.com">Please let me out</a></b>
+	</p>
+
+	<p style="text-align:left">Erotic Mind Control	Adventures are currently being built by cmacleod and the
+	<a href="http://www.hypnopics-collective.net/smf_forum/index.php">Hypnopics Collective</a>.<br>
+	To join in the discussion please log in/create an account and add your thoughts to the "A Spell For All Version 14" thread in the MC Game Zone subforum.<p>
+	<p>If you have ideas or would like to make suggestions/submissions please refer to the FAQ for information on how to do so.</p>
+	<p>To play this game must have Javascript enabled and support HTML5. This game is compatible with all major browsers.</p>
+	<p style="font-family:Arial Black;margin-bottom:-0.1em">What's New:</p>
+	<b>Release version <script>document.write(getVersion())</script></b><br>
+	<input class="spoilerbutton" type="button" value="Show" onclick="this.value=this.value=='Show'?'Hide':'Show';">
+	<div class="spoiler"><div><table cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse">
+
+	<tr><td class="info">New Character</td>		<td>- Penelope, the school administrator. Talk to Principal Reagan after charming her. Submitted by Mastram.</td></tr>
+	<tr><td class="info">New Character</td>		<td>- Heather, the school librarian. New library at school available from the start. Submitted by Mastram.</td></tr>
+	<tr><td class="info">New Character</td>		<td>- Ursula, the private detective. Spend the night away from home after having met Sarah. Submitted by Mastram.</td></tr>
+	<tr><td class="info">Alison changes</td>		<td>- Alternate way to charm Alison without knowing Shielded Charm with the use of another spell.</td></tr>
+	<tr><td class="info">Catherine</td>				<td>- Now actually works as a nurse (friday late morning) and in admin (rest of week mornings). Does not after the scene with Mr Beasley and Amy until you transform Mr Beasley. First aid scene if you are hurt at the sport fields, alternate to Tracy's version. Threesome with Mrs Granger post construction site meeting. Bondage play at Avernus club and can be with Mrs Granger. Threesome with Penelope. Multiple image changes and added new sexy sms images.</td></tr>
+	<tr><td class="info">Catherine's Revenge</td><td>- There are now a series of events for discussing Catherine's desire for revenge on Mr Beasley. The transform scenes now require and involve her. Some tweaks to post transform scenes for Miss Beasley, add extra sex scenes and image variations.</td></tr>
+	<tr><td class="info">Sarah and Lauren</td>	<td>- Major changes for them on the <b>apprentice</b> path. All events are reset when loading an existing save. Events are a bit more reliable and there is no case where they become unavailable. <b>Warning</b> these is a major consequence if you charm Lauren in this path. It is easier but will cause permanent problems! Sarah <b>cannot be charmed</b> but she <b>and</b> Lauren can be romanced.</b></td></tr>
+	<tr><td class="info">New Player Avatar</td>	<td>- forum user cell943 submitted a new female avatar, Peta Jensen.</td></tr>
+	<tr><td class="info">Messages</td>				<td>- Added more sexy sms images for multiple people and alter randomness of selection to prevent the same one twice in a row. Altered a number of other SMS messages to appear at more reasonable times.</td></tr>
+	<tr><td class="info">Image Fixes</td>			<td>- Fixed images for Madison/Aletta Ocean including scenes with Zoey. Diane sms images corrections. Fixed bed images for Angela, Abby, Adele, Cherry.</td></tr>
+	<tr><td class="info">Pregnancy</td>				<td>- End game pregnancy for Lilith.</td></tr>	
+	<tr><td class="info">Image Additions</td>		<td>- Angela home explicit sex images, pool explicit images for male player. More poledance images for Tess.</td></tr>
+	<tr><td class="info">Bug Fixes</td>				<td><ul><li>- Some typos</li>
+		<li>- Fixed dialogue to pick models can distort the images in some cases.</li>
+		<li>- A few fixes with missing dialogues like some phone calls, SMS messages in some cases.</li>
+		<li>- Fixed some missing images for instance Pamela's working scene when her model had not been selected.</li>
+		<li>- Fixed some cases freeing people via Tina/Silver Ring did not update the mana display and one case of no mana returned. Also did not reference Tina in a couple of cases properly.</li>
+		<li>- Officer Khan did not leave the hospital after Mrs Granger recovered.</li>
+		<li>- Cherry's SMS images appeared too quickly and close together.</li>
+		<li>- spend time with Betty button appeared twice.</li>
+		<li>- Diane White did not leave the police station at night to her apartment post charm, she was sort of in both places at once.</li>
+		<li>- sex scenes were taking too long, 40 minutes not 20 minutes.</li>
+	</ul></td></tr>
+	<tr><td class="info">Layout/Abbreviation</td><td>- Some changes to abbreviate some text usually for static location descriptions</td></tr>
+	<tr><td class="info">Event Clarifications</td><td>- Small changes in events to clarify or alter minor progression. Some QOL changes like making some queries/options available at people's homes (Mayor and open/close museum for instance), Some notes tweaks. Can call Madison from Zoey's apartment and visa versa now.</td></tr>
+	</table></div></div>
+		
+	<p style="font-family:Arial Black;margin-bottom:-0.25em">Previously New:</p>
+	<input class="spoilerbutton" type="button" value="Show Old History" onclick="this.value=this.value=='Show Old History'?'Hide Old History':'Show Old History';">
+	<div class="spoiler"><div>
+	<p>Version 14.13</p>
+	<div><table cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse">
+	<tr><td class="info">Bug Fixes</td>				<td>- Some image fixes, one for Zoey/Riley Reid. Dreams were disabled in some cases incorrectly.</td></tr>
+	<tr><td class="info">Pregnancies</td>			<td>- End game pregnancies for Officer Khan, Officer Batton, Mother Superior, Tina (not as a vampire), Lauren, Leanne, John Adams. Some existing edits replace with actual images of the models when pregnant (Jayden Jaymes, Riley Reid). Two edits courtesy of Wape (game Incubus City)</td></tr>
+	<tr><td class="info">Alternate Models</td>	<td>- Models from the bologna44 mod imported as alternates for<ul style="margin: 0.1em">
+		<li>Ellie (Alix Lynx)</li>
+		<li>Tracy (Casey Calvert)</li>
+		<li>Carol (Summer Brielle)</li>
+		<li>Tina (Lana Rhoades)</li>
+		<li>Officer Khan (Capri Cavalli - note same model as Amy Ross)</li>
+	</ul>Select on first visit, and the transform spell can be used to change the model later. Old saves default to the original model. Note: some other characters have had images restructured to allow these changes in future.</td></tr>
+	<tr><td class="info">Extra Scenes/Images</td><td><ul style="margin: 0">
+		<li>Added SMS for Officer Batton</li>
+		<li>new pool scene for Tina</li>
+		<li>extra poledance images for Officer Khan</li>
+		<li>additional poledance image for Catherine.</li>
+		<li>Mother Superior has pool scenes, an extra poledance image and tit-fucking scenes when she has been transformed for larger breasts</li>
+	</ul></td></tr>
+	<tr><td class="info">Locale Models</td>		<td>- Model choices for police officers, Nurses are no longer locked to UK/US locale. You can pick any if you do not mind the uniform disconnect for police especially.</td></tr>
+	<tr><td class="info">Extra Charms</td>			<td>- Louise and Mrs Robbins can now be charmed as a lover, as well/instead of the original slave charm. Both can be recharmed at a later time</td></tr>
+	<tr><td class="info">UI (Inventory)</td>		<td>- There is a new view for the inventory, a switchable right tab, now the default but you can use the old view via your phone apps. Additionally there is an additional compact view for the icon based view of items in your inventory</td></tr>
+	<tr><td class="info">UI (Hints)</td>			<td>- Early game hints shown with blinking arrows, can be disabled in your phone apps.</td></tr>		
+	<tr><td class="info">Notifications</td>		<td>- When a new location is revealed a popup notification is shown as a reminder in case you missed the reference in the game.</td></tr>
+	<tr><td class="info">Sending SMS's</td>		<td>- You can now send a SMS to people asking simple queries like 'Where are you?' 'Send me a picture' not all people will reply</td></tr>
+	<tr><td class="info">New Character</td>		<td>- Leigh Parker, another bank teller, uses the model for Ellie you do not pick. Similar content (charm is different)</td></tr>
+	<tr><td class="info">New Character</td>		<td>- Principal Reagan (model Reagan Foxx) first met in the game introduction. Submitted by Mastram</td></tr>
+	<tr><td class="info">New Character</td>		<td>- Cherry (model Cherie Deville) runs a yoga studio/new age shop near Esmeralda's store.</td></tr>
+	<tr><td class="info">New Items</td>				<td>- Cherry sells some minor items, the dream catcher replaces the pink noise app. The diffuser guarantees a dream. Pyrites pendant is a small mana recharge per day and a minor protection (works for Elian as 0.5), Idol also a minor protection (also 0.5)</td></tr>
+	<tr><td class="info">Hydromancy Change</td>	<td>- Hydromancy needs you to know how to meditate. Cherry can teach you for a price (can be free)</td></tr>
+	<tr><td class="info">Map changes</td>			<td>- New places added to the map for future content and some minor tweaks and rearranges</td></tr>
+	<tr><td class="info">New Male Avatar</td>		<td>- New avatar, Ricky Spanish submitted by Mastram</td></tr>
+	<tr><td class="info">Saving Seraphina</td>	<td>- You can now save Sera from being a thrall, talk to Jade. You can after a time charm her</td></tr>
+	</table></div>
+	<p>Version 14.12</p>
+	<div><table cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse">
+		
+	<tr><td class="info">Select Models</td>	<td>- at the start of the game you now have the option to select the models for characters with multiple choices. You can still leave this until you meet the characters during the game. The select dialog can also be accessed from the cheat menu</td></tr>
+	<tr><td class="info">Explicit ratio</td>	<td>- you can now select how often explicit images are shown, from 0, 80% or 100% of the time.</td></tr>			
+	<tr><td class="info">Bug Fixes</td>			<td>- map quick run, Leanne moving issues, a missing image for Miss Beasley. An issue for the 'take the thrall' option possessing Mother Superior.</td></tr>
+	<tr><td class="info">Pregnancies</td>		<td>- End game pregnancy for Charlie, Kristin, Mrs Tanika (Diane and Katrina(real)), Ms. Titus and Gabby (not in the case of her being Mom's lover). Dual pregnancy edit for Victoria and Nella. Updated image for Becky Smith (Alanah Rae model)</td></tr>
+	<tr><td class="info">Alternate Models</td><td>- Models from the bologna44 mod imported as alternates for Donna, Kylie, Louise, Madison, Melissa, Mom, Mr Beasley (female extra bondage), Mrs Robbins, Ms. Jones and Esmeralda. Select on first visit, and the transform spell can be used to change the model later. Old saves default to the original model. Note: some other characters have had images restructured to allow these changes in future.</td></tr>
+	<tr><td class="info">Alternate Models</td><td>- Alternate model for Jade submitted by badbrad1369, Aiden Starr was submitted and is selected on first visit. Old saves default to the orignial model</td></tr>
+	<tr><td class="info">New Scenes</td>		<td>- Tit-fuck scene for Gina. Repeat BJ scenes for Becky Smith and Tit-fuck scene. Some extra image variations for Donna and Melissa. Pool scene for Mrs Tanika with explicit versions. New pool scene for Abby and additional poledancing image. Additional poledancing image for Tina Robbins and a tit-fuck scene (non-explicit). Extra image variations for Victoria. Light bondage play with Tess and pool sex image for males. Some images here are look-a-like models. Tess + Tracy threesome. More pool images for Ms. Jones.</td></tr>
+	<tr><td class="info">New Character</td>	<td>- Zali the lonely cat lady, a MILF submitted by badbrad1369. Two charm parths (slave, lover), available after transforming Miku. Model Zoey Taylor</td></tr>
+	<tr><td class="info">New Character</td>	<td>- Emma the barista at the cafe in the shopping district. Three paths (lover, bimbo, mistress), one has different scenes for male player and female player. Model Samantha Saint.</td></tr>
+	<tr><td class="info">Ported Character</td><td>- Kellie the student, ported from the bologna44 mod. Now available after charming Miss Logan. Two paths (slave and lover). Model Kylie Page/Bonnie Kinz. Includes scenes studying with her and Miss Logan, a visit to the new movie theatre. Different SMS messages for paths and other scenes.</td></tr>
+	<tr><td class="info">Poledancing</td>		<td>- You can call people from the club and ask them to dance. Most charmed people support this, a few do not. Includes adding new scenes for Gabby, Officer Khan, Officer Smith, and some that were not accessible or difficult to access before, notably nurses and Officer Batton. Explicit poledancing scenes for Mrs Tanika. Additional poledancing images for Abby, Mrs Robbins, Tess and Tina Robbins.</td></tr>
+	<tr><td class="info">Lilith's Start</td>	<td>- Some changes to the start of the events for Lilith, an early sighting and possible bad end. A few more queries about her.</td></tr>
+		
+	</table></div>
+	</div></div>
+	<p style="font-family:Arial Black;margin-bottom:-0.5em">What <b>cannot</b> be done as of this release</p>
+	<ul>
+		<li>Enter the Barn</li>
+		<li>Charm the reporter Julie</li>
+		<li>Charm the Campers</li>
+		<li>Charm Jade</li>
+		<li>Charm Sarah on the Conspiracy or Apprentice Paths</li>
+		<li>Charm Lauren on the Conspiracy Path</li>
+		<li>Further events for Lucy, ie one of the thralls</li>
+		<li>Charm Jesse</li>
+		<li>Charm Jessica, bondage yes, free yes, charm no</li>
+		<li>Charm Esmeralda</li>
+		<li>Charm Sir Ronald on the Conspiracy/Apprentice path</li>
+		<li>Mr. Tanika is not available yet</li>
+	</ul>
+	<p style="font-family:Arial Black;margin-bottom:-0.5em">Links</p>
+	<ul>
+		<li><a href="Help/links.htm">Wizard's Old Favourite Sites and Stories</a> (Old, links may be broken)</li>
+	</ul>
+</div>
+</div>
+</body>
+</html>
